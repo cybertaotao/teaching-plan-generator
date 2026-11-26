@@ -1,55 +1,72 @@
-# 智能教案制作助手 · teaching-plan-generator V1.0
+# 智能教案制作助手 · Teaching Plan Generator
 
-面向支持 `SKILL.md` 的 AI Agent（如具有文件读图和 Python 执行能力的编码助手）的便携技能工程。不是独立的桌面应用，不内置大模型 API，不需要 API Key；学习资料的理解与转写由运行技能的 AI 完成。
+> 将教师已有的教材、试卷、PDF、图片加工为 **原题完整、知识点清晰、符合机构模板、可编辑可打印的 Word 教案**。
 
-## 快速使用（推荐：让 AI 执行）
+![阶段](https://img.shields.io/badge/阶段-Skill_V1.0-blue) ![方向](https://img.shields.io/badge/下一步-Web_MVP-orange)
 
-1. 解压整个 `teaching-plan-generator` 文件夹，放入你的 Agent 可读取的技能目录或项目工作目录。具体技能目录与自动触发机制取决于平台；本包不会自动安装到任何账户。
-2. 新对话上传学习资料，指定使用该 Skill；默认采用附带的莺湖教育模板（若上传新模板，以新模板为准）。
-3. 提示示例：
+## 1. 项目是做什么的？
 
-> 使用 teaching-plan-generator Skill，基于附件中的学习资料制作教案，从笔试题开始。保留所有原题、选项、划线、配图及空白，不填写答案。采用默认教案模板，保持每页边框和教学过程竖栏，逐页验收后输出 Word。
+面向中小学教师、兼职辅导老师与教培机构，解决资料录题、知识点整理、固定教案排版与打印返工问题。区别于通用 AI 教案生成器，本项目强调 **原题保真 + 机构模板保护 + 逐页质量验收**。
 
-4. AI 阅读 `SKILL.md`，生成 JSON 计划，调用脚本并逐页渲染检查。若 Agent 没有技能发现机制，直接让它读取该文件及其引用文件即可。
-
-## 本地运行脚本（Windows / Linux / macOS）
-
-需要 Python 3.10+、LibreOffice（`soffice` 可在 PATH 找到），以及中文/英文字体（宋体、Times New Roman 或可用等价字体；不分发字体文件）。在目录中执行：
-
-```bash
-python -m pip install -r requirements.txt
-python scripts/extract_material.py "你的资料.pdf" work/source
-# AI 读取 work/source/material.json 和每页 PNG，生成 work/plan.json
-python scripts/fill_template.py examples/english-unit1-4.json output/教案.docx
-python scripts/render_preview.py output/教案.docx output/preview
-python scripts/validate_docx.py examples/english-unit1-4.json output/教案.docx --pdf output/preview/preview.pdf --report output/qa.json
-python -m unittest discover -s tests -v
+```mermaid
+flowchart LR
+  A[上传试卷 / 教材] --> B[提取原题]
+  B --> C[原题确认]
+  C --> D[AI 教学分析]
+  D --> E[结构化教案 JSON]
+  E --> F[Word 模板填充]
+  F --> G[分页与质量验收]
+  G --> H[导出 DOCX]
 ```
 
-上面的 fill 命令演示历史英语样例；制作新教案时将两个命令的 JSON 路径改成 `work/plan.json`。PowerShell 下同样可逐行执行。没有 LibreOffice 时结构检查可运行，但不得宣称完成视觉验收。
+## 2. 快速使用
 
-## 目录
+- **已有完整 V1.0 压缩包：** 解压后让支持文件读取、视觉和 Python 的 AI Agent 阅读 [SKILL.md](SKILL.md)，上传学习资料即可开始。
+- **想了解详细操作：** [使用教程（Agent / 本地 Python / Git 同步）](docs/USAGE.md)。
+- **想继续开发：** 阅读 [开发路线图](docs/ROADMAP.md) 和 [技术架构](docs/ARCHITECTURE.md)。
 
-```text
-teaching-plan-generator/
-├── SKILL.md                        # Agent 入口、触发场景、强制流程
-├── README.md                       # 安装及使用
-├── requirements.txt
-├── assets/default-template.docx    # 默认三页型空白模板
-├── references/                    # 原题、教学、模板、计划、验收规范
-├── scripts/                       # 提取、填充、渲染、结构校验
-├── examples/                      # 120 题完整英语回归计划 + 最小格式示例
-└── tests/                         # 自动回归及测试说明
-```
+可复制给 AI：
 
-## 能力与边界
+> 使用 teaching-plan-generator Skill，根据附件制作教案，从笔试题开始。完整保留原题、题号、选项、划线、配图和答题空白，归纳核心知识点，不填写答案。沿用机构教案模板，每页保留外框和教学过程栏，逐页检查后输出 Word。
 
-- 已支持默认模板及相同三页型结构的适配模板；不自动识别任意机构 Word 模板。模板源于用户原模板的边框修正版；保留修正版的页眉页脚、边框与页边距。不是任意模板的通用排版引擎。
-- PDF、图片、Word 可作为学习资料；扫描页由 AI 看图，不内置 OCR 或模型调用。旧 `.doc` 学习材料需 LibreOffice 转 PDF；旧 `.doc` 模板须先转换并准备页型，不能直接传给填充脚本。
-- 支持可编辑文本、普通内嵌表格、段落下划线和图片；复杂公式、图形、合并内嵌表需专项适配，不能保证全可编辑。正文结构检查不能保证源文准确，必须人工/AI 核对原始附件。
-- 页数与版式受字体及 Word/WPS/LibreOffice 渲染差异影响，需实际打印前预览。脚本不会自动决定分页或自动重试；Agent 根据渲染结果调整计划后再运行。
-- 附带机构标志和联系电话、历史练习题仅用于本人的备课与回归测试；公开发布工程前确认授权或换用脱敏资源。
+**当前仓库状态（2026-11-26）：** Skill 入口、使用教程、产品需求、调研、架构、路线图、历史测试报告已归档。原始 V1.0 ZIP 中的 Python 脚本、模板及测试数据尚未完整同步到 GitHub；仅克隆本仓库还不能运行生成脚本。请按教程中的「同步原始工程」补齐，注意不要覆盖新版 README。V1.0 是 Agent 技能，不是已上线的 Web 平台。
 
-## 版本
+## 3. 项目文档导航
 
-V1.0：英语教案场景实测；固定模板填充、题目 ID 对账、结构验收与渲染检查。多学科专项与学生历史分析留待后续版本。
+| 文档 | 内容 |
+| --- | --- |
+| [SKILL.md](SKILL.md) | AI 执行入口与强制工作流 |
+| [使用教程](docs/USAGE.md) | 环境、安装、调用、示例、排错 |
+| [产品需求 PRD](docs/PRD.md) | 项目背景、用户痛点、功能优先级、验收 |
+| [竞品与可行性调研](docs/RESEARCH.md) | 竞品、开源复用、模型 API 与成本 |
+| [技术架构](docs/ARCHITECTURE.md) | 技术栈、数据协议、模型和文档引擎 |
+| [路线图](docs/ROADMAP.md) | 当前进度、MVP 边界、迭代任务 |
+| [V1.0 原始说明](docs/SKILL-V1-README.md) | 保留首次交付的 README |
+| [历史测试报告](tests/TEST-REPORT.md) | 120 道小题、8 页回归案例与测试限制 |
+
+## 4. 当前成果与下一步
+
+| 阶段 | 状态 |
+| --- | --- |
+| 英语教案真实案例验证 | 已完成 |
+| Skill V1.0 完整工程 | 已在此前会话生成，本仓库部分同步 |
+| V1.0 回归案例 | 历史测试：120 个题目 ID、8 页、4 项自动测试 |
+| 本地 OCR + 模型 API 验证 | 待开发 |
+| Web 教案工作台 MVP | 待开发 |
+| 多学科、桌面端、机构管理 | 后续规划 |
+
+首版优先实现：上传 PDF/图片/Word、原题解析与人工确认、知识点生成、固定模板填充、逐页预览、Word 导出。暂不做完整在线 Word 编辑器、在线题库、学生管理、模型训练或多 Agent 系统。
+
+## 5. 推荐技术栈
+
+Vue 3 + TypeScript + Vite + Element Plus / FastAPI + Python / SQLite / PaddleOCR（或 MinerU）/ python-docx / LibreOffice / PDF.js。独立应用优先支持 OpenAI 兼容模型接口，个人使用可继续借助已有 Agent 而无需另配 API Key；云 API 与 ChatGPT 订阅分别计费。
+
+## 6. 项目原则
+
+- 不漏题、不擅自改题、不默认填写答案。
+- 不重绘机构外表，不删除每页边框、教学过程竖栏、页眉页脚及审核区域。
+- 模板或识别异常时明确提示，不伪造验收结果。
+- 保持结构化内容与 Word 排版分离，先复用已有脚本，再增加界面。
+- 当前私有仓库：原机构模板含 Logo 和联系方式，公开前需脱敏及确认授权；不得提交 API Key、学生个人信息或无授权资料。
+
+下次继续开发时，先读 [AGENTS.md](AGENTS.md) 与 [路线图](docs/ROADMAP.md)，避免重复分析。
